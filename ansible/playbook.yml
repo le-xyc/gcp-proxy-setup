@@ -1,0 +1,60 @@
+---
+- name: Configure Squid Proxy
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update package lists
+      apt:
+        update_cache: yes
+
+    - name: Install Squid, passlib and apache2-utils
+      apt:
+        name:
+          - squid
+          - python3-passlib
+          - apache2-utils
+        state: present
+
+    - name: Insert http_port before localnet ACL
+      lineinfile:
+        path: /etc/squid/squid.conf
+        line: 'http_port {{ proxy_port }}'
+        insertbefore: '^acl localnet src 0.0.0.1-0.255.255.255\s*(#.*)?$'
+        state: present
+
+    - name: Insert auth_param lines after Safe_ports
+      blockinfile:
+        path: /etc/squid/squid.conf
+        block: |
+          auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+          auth_param basic children 5
+          auth_param basic realm Squid Proxy Server
+          auth_param basic credentialsttl 2 hours
+          acl authenticated proxy_auth REQUIRED
+        insertafter: '^acl Safe_ports port 777\s+# multiling http$'
+
+    - name: Remove http_access deny CONNECT line
+      lineinfile:
+        path: /etc/squid/squid.conf
+        regexp: '^http_access deny CONNECT !SSL_ports'
+        state: absent
+
+    - name: Allow authenticated traffic before deny all
+      lineinfile:
+        path: /etc/squid/squid.conf
+        line: 'http_access allow authenticated'
+        insertbefore: '^http_access deny all'
+
+    - name: Create htpasswd user
+      htpasswd:
+        name: "{{ proxy_username }}"
+        password: "{{ proxy_password }}"
+        path: /etc/squid/passwd
+        create: yes
+        mode: "0644"
+
+    - name: Restart Squid
+      systemd:
+        name: squid
+        state: restarted
+        enabled: yes
