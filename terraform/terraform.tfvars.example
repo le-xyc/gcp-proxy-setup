@@ -1,0 +1,2 @@
+port = "3333"
+instance_name = "my-vm-instance-2024"
