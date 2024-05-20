@@ -15,12 +15,11 @@
           - apache2-utils
         state: present
 
-    - name: Insert http_port before localnet ACL
-      lineinfile:
+    - name: Change http_port to specified port
+      replace:
         path: /etc/squid/squid.conf
-        line: 'http_port {{ proxy_port }}'
-        insertbefore: '^acl localnet src 0.0.0.1-0.255.255.255\s*(#.*)?$'
-        state: present
+        regexp: '^http_port 3128'
+        replace: 'http_port {{ proxy_port }}'
 
     - name: Insert auth_param lines after Safe_ports
       blockinfile:
