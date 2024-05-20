@@ -13,13 +13,18 @@ variable "zone" {
   description = "GCP zone"
 }
 
-variable "port" {
-  type        = string
-  description = "Squid port"
-  default     = "3113"
+variable "ports" {
+  type        = list(string)
+  description = "Squid ports"
 }
 
-variable "instance_name" {
-  type        = string
-  description = "Name of the VM instance"
+variable "instances_names" {
+  type        = list(string)
+  description = "Names of VM instances"
+  default     = []
+}
+
+variable "n_proxies" {
+  type        = number
+  description = "Number of VM instances to create"
 }

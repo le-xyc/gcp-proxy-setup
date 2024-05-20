@@ -8,18 +8,25 @@ resource "google_service_account" "service-account" {
 }
 
 resource "google_compute_address" "external-static-ip-address" {
-  name = "ip-${var.port}"
+  count = var.n_proxies
+  name = "ip-${var.ports[count.index]}"
   region = var.region
 }
 
 locals {
-  instance_name = var.instance_name != "" ? var.instance_name : "instance-${var.port}"
+  instances_names = concat(
+    var.instances_names, 
+    [for i in range(max(0, length(var.ports) - length(var.instances_names))) : "instance-${var.ports[length(var.instances_names) + i]}"] # Updated
+  )
 }
 
+
 resource "google_compute_instance" "proxy-server" {
+  count = var.n_proxies
+
   boot_disk {
     auto_delete = true
-    device_name = local.instance_name
+    device_name = local.instances_names[count.index]
 
     initialize_params {
       image = "projects/debian-cloud/global/images/debian-12-bookworm-v20240515"
@@ -35,12 +42,12 @@ resource "google_compute_instance" "proxy-server" {
   enable_display      = false
 
   machine_type = "e2-micro"
-  name         = local.instance_name
+  name         = local.instances_names[count.index]
 
   network_interface {
     access_config {
       network_tier = "PREMIUM"
-      nat_ip = google_compute_address.external-static-ip-address.address
+      nat_ip = google_compute_address.external-static-ip-address[count.index].address
     }
 
     queue_count = 0
@@ -70,13 +77,14 @@ resource "google_compute_instance" "proxy-server" {
 }
 
 resource "google_compute_firewall" "allow-squid" {
-  name        = "default-allow-squid-${var.port}"
+  count = var.n_proxies
+  name        = "default-allow-squid-${var.ports[count.index]}"
   network     = "default"
   direction   = "INGRESS"
 
   allow {
     protocol = "tcp"
-    ports    = [var.port]
+    ports    = [var.ports[count.index]]
   }
 
   source_ranges = ["0.0.0.0/0"]

@@ -1,2 +1,2 @@
-port = "3333"
-instance_name = "my-vm-instance-2024"
+instances_names = ["my-vm-instance-1", "my-vm-instance-2", "tempo"]
+ports         = ["3333", "4444",]

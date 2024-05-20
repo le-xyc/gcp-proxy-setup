@@ -1,14 +1,14 @@
-output "external_ip" {
-  value       = google_compute_instance.proxy-server.network_interface.0.access_config.0.nat_ip
-  description = "The external IP address of the VM instance"
+output "external_ips" {
+  value       = [for instance in google_compute_instance.proxy-server : instance.network_interface.0.access_config.0.nat_ip]
+  description = "External IP addresses of VM instances"
 }
 
-output "instance_name" {
-  value       = google_compute_instance.proxy-server.name
-  description = "The name of the VM instance"
+output "instances_names" {
+  value       = google_compute_instance.proxy-server[*].name
+  description = "Names of VM instances"
 }
 
-output "proxy_port" {
-  value       = one(google_compute_firewall.allow-squid.allow.*.ports)[0]
-  description = "The proxy port"
+output "proxies_ports" {
+  value = [for rule in google_compute_firewall.allow-squid : one(rule.allow.*.ports)[0]]
+  description = "Proxies ports"
 }
