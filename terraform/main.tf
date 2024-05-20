@@ -1,7 +1,3 @@
-provider "google" {
-  project = var.project
-}
-
 resource "google_service_account" "service-account" {
   account_id   = "my-service-account"
   display_name = "My service account"
@@ -12,14 +8,6 @@ resource "google_compute_address" "external-static-ip-address" {
   name = "ip-${var.ports[count.index]}"
   region = var.region
 }
-
-locals {
-  instances_names = concat(
-    var.instances_names, 
-    [for i in range(max(0, length(var.ports) - length(var.instances_names))) : "instance-${var.ports[length(var.instances_names) + i]}"] # Updated
-  )
-}
-
 
 resource "google_compute_instance" "proxy-server" {
   count = var.n_proxies
