@@ -4,9 +4,9 @@ resource "google_service_account" "service-account" {
 }
 
 resource "google_compute_address" "external-static-ip-address" {
-  count = var.n_proxies
-  name = "ip-${var.ports[count.index]}"
-  region = var.region
+  count  = var.n_proxies
+  name   = "ip-${count.index + 1}"
+  region = local.regions[count.index]
 }
 
 resource "google_compute_instance" "proxy-server" {
@@ -35,12 +35,12 @@ resource "google_compute_instance" "proxy-server" {
   network_interface {
     access_config {
       network_tier = "PREMIUM"
-      nat_ip = google_compute_address.external-static-ip-address[count.index].address
+      nat_ip       = google_compute_address.external-static-ip-address[count.index].address
     }
 
     queue_count = 0
     stack_type  = "IPV4_ONLY"
-    subnetwork  = "projects/${var.project}/regions/${var.region}/subnetworks/default"
+    subnetwork  = "projects/${var.project}/regions/${local.regions[count.index]}/subnetworks/default"
   }
 
   scheduling {
@@ -61,18 +61,18 @@ resource "google_compute_instance" "proxy-server" {
     enable_vtpm                 = true
   }
 
-  zone = var.zone
+  zone = "${local.regions[count.index]}-a"
 }
 
 resource "google_compute_firewall" "allow-squid" {
-  count = var.n_proxies
-  name        = "default-allow-squid-${var.ports[count.index]}"
-  network     = "default"
-  direction   = "INGRESS"
+  count     = local.n_unique_ports
+  name      = "default-allow-squid-${local.distinct_ports[count.index]}"
+  network   = "default"
+  direction = "INGRESS"
 
   allow {
     protocol = "tcp"
-    ports    = [var.ports[count.index]]
+    ports    = [local.distinct_ports[count.index]]
   }
 
   source_ranges = ["0.0.0.0/0"]

@@ -9,6 +9,11 @@ output "instances_names" {
 }
 
 output "proxies_ports" {
-  value = [for rule in google_compute_firewall.allow-squid : one(rule.allow.*.ports)[0]]
+  value       = local.ports
   description = "Proxies ports"
+}
+
+output "instances_zones" {
+  value       = [for instance in google_compute_instance.proxy-server : instance.zone]
+  description = "Zones of VM instances"
 }

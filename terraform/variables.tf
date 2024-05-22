@@ -3,28 +3,30 @@ variable "project" {
   description = "GCP project ID"
 }
 
-variable "region" {
+variable "default_region" {
   type        = string
-  description = "GCP region"
-}
-
-variable "zone" {
-  type        = string
-  description = "GCP zone"
+  description = "Default GCP region for VM instances"
 }
 
 variable "ports" {
   type        = list(string)
-  description = "Squid ports"
+  description = "Provided Squid ports for VM instances"
+  default     = []
 }
 
 variable "instances_names" {
   type        = list(string)
-  description = "Names of VM instances"
+  description = "Provided names for VM instances"
   default     = []
 }
 
 variable "n_proxies" {
   type        = number
   description = "Number of VM instances to create"
+}
+
+variable "regions" {
+  type        = list(string)
+  description = "Provided regions for VM instances"
+  default     = []
 }

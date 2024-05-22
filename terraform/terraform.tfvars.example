@@ -1,2 +1,3 @@
-instances_names = ["my-vm-instance-1", "my-vm-instance-2", "tempo"]
-ports         = ["3333", "4444",]
+instances_names = ["my-vm-instance-1", "my-vm-instance-2, "test-instance", "one-more-instance"]
+ports           = ["3333", "4444"]
+regions         = ["northamerica-northeast1", "us-west1", "europe-west8"]

@@ -16,9 +16,8 @@ fi
 
 PROJECT=$(gcloud config get-value project)
 REGION=$(gcloud config get-value compute/region)
-ZONE=$(gcloud config get-value compute/zone)
 
-required_vars=(PROJECT REGION ZONE)
+required_vars=(PROJECT REGION)
 missing_vars=()
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
@@ -56,24 +55,17 @@ N_PROXIES=${#PROXIES_USERNAMES_ARRAY[@]}
 
 cd ./terraform
 
-TFVARS_PORTS=($(grep -E 'ports\s*=\s*\[([^]]+)\]' terraform.tfvars | cut -d'[' -f2 | cut -d']' -f1 | tr -d '" ' | tr ',' '\n'))
-if [[ ${#TFVARS_PORTS[@]} -lt $N_PROXIES ]]; then
-    echo "Error: Number of ports in terraform.tfvars (${#TFVARS_PORTS[@]}) should be at least the same as the number of usernames/passwords in .env ($N_PROXIES)."
-    exit 1
-fi
-
 terraform init
 terraform apply \
     -var="project=$PROJECT" \
-    -var="region=$REGION" \
-    -var="zone=$ZONE" \
+    -var="default_region=$REGION" \
     -var="n_proxies=$N_PROXIES" \
     -auto-approve
 
 EXTERNAL_IPS=($(terraform output -json external_ips | jq -r '.[]'))
 INSTANCES_NAMES=($(terraform output -json instances_names | jq -r '.[]'))
 PROXIES_PORTS=($(terraform output -json proxies_ports | jq -r '.[]'))
-
+INSTANCES_ZONES=($(terraform output -json instances_zones | jq -r '.[]'))
 
 cd ..
 i=0
@@ -81,6 +73,7 @@ while [[ $i -lt $N_PROXIES ]]; do
     EXTERNAL_IP=${EXTERNAL_IPS[i]}
     INSTANCE_NAME=${INSTANCES_NAMES[i]}
     PROXY_PORT=${PROXIES_PORTS[i]}
+    INSTANCE_ZONE=${INSTANCES_ZONES[i]}
     echo "Running setup for $INSTANCE_NAME..."
     echo "External IP Address: $EXTERNAL_IP"
 
@@ -89,7 +82,7 @@ while [[ $i -lt $N_PROXIES ]]; do
 
     gcloud compute instances add-metadata "$INSTANCE_NAME" \
         --metadata "ssh-keys=$(whoami):$(cat "$TMP_KEY_PATH.pub")" \
-        --zone "$ZONE" \
+        --zone "$INSTANCE_ZONE" \
         --project "$PROJECT"
 
 
@@ -104,4 +97,4 @@ while [[ $i -lt $N_PROXIES ]]; do
     i=$((i+1))
 done
 
-echo "Proxy server setup complete!"
+echo "Proxy servers setup complete!"
